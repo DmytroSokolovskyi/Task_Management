@@ -1,93 +1,79 @@
-// import {deleteUser, setUser} from "../redux/actions";
-// import {
-//     destroyAuthToLocal,
-//     destroyTokens,
-//     getAuth,
-//     getToken,
-//     logOut,
-//     login,
-//     saveAuthToLocal,
-//     saveTokens,
-// } from "../services";
+import {checkAuth, destroyTokens, logOut, login, saveTokens} from "../services";
+import {deleteUser, setUser} from "../redux/actions";
 import {useContext, useEffect, useState} from "react";
 import {AuthContext} from "../context";
 import {useDispatch} from "react-redux";
-import {useHistory} from "react-router";
 
 export const useAuth = () => {
-    const history = useHistory();
     const dispatch = useDispatch();
     const {setIsAuth} = useContext(AuthContext);
 
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const checkAuth = async () => {
-        setLoading(true);
-        // const auth = await getAuth();
-
-        // if (auth) {
-        //     setIsAuth(true);
-        //     history.push("/");
-        // }
-
-        setLoading(false);
-    };
-
-    const goLogin = async (logPass) => {
+    const check = async () => {
         try {
             setLoading(true);
-            // const res = await login(logPass);
 
-            // if (res) {
-            //     setIsAuth(true);
-            //     saveTokens(res.access_token, res.refresh_token);
-            //     saveAuthToLocal(true, res.clearUser);
-            //     dispatch(setUser(res.clearUser));
-            //
-            //     setLoading(false);
-            // }
+            const res = await checkAuth();
 
-            setError("Wrong email or password");
+            setIsAuth(true);
+            dispatch(setUser(res.data));
+
+            setError("");
         } catch (e) {
-            setError(e.message);
-            setLoading(false);
+            console.log(e.message);
         } finally {
             setLoading(false);
         }
     };
 
-    // const goLogOut = async () => {
-    //     try {
-    //         setLoading(true);
-    //         const accessToken = getToken("access_token");
-    //
-    //         const res = await logOut(accessToken);
-    //         destroyAuthToLocal();
-    //
-    //         if (res === 204) {
-    //             setIsAuth(false);
-    //             destroyTokens();
-    //             destroyAuthToLocal();
-    //             dispatch(deleteUser());
-    //         }
-    //     } catch (e) {
-    //         setError(e.message);
-    //         setLoading(false);
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
+    const goLogin = async (logPass) => {
+        try {
+            setLoading(true);
+
+            const res = await login(logPass);
+            const {access_token, refresh_token, user} = res.data;
+
+            setIsAuth(true);
+            saveTokens(access_token, refresh_token);
+            dispatch(setUser(user));
+
+            setError("");
+        } catch (e) {
+            setError("Wrong email or password");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const goLogOut = async () => {
+        try {
+            setLoading(true);
+
+            const res = await logOut();
+
+            if (res.status === 204) {
+                setIsAuth(false);
+                destroyTokens();
+                dispatch(deleteUser());
+            }
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(async () => {
-        await checkAuth();
+        await check();
     }, []);
 
     return {
         error,
         loading,
         goLogin,
-        // goLogOut,
-        checkAuth,
+        goLogOut,
+        check,
     };
 };

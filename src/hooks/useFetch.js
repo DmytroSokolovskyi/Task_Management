@@ -5,39 +5,25 @@ export const useFetch = () => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState([]);
-    const [res, setRes] = useState({});
+    const [response, setResponse] = useState({});
     const dispatch = useDispatch();
 
     const goFetch = async (callback, toRedux) => {
         try {
             setLoading(true);
 
-            const response = toRedux ? await dispatch(callback) : await callback;
+            const res = toRedux ? await dispatch(callback) : await callback;
 
-            console.log(response);
+            setResponse(res);
+            setData(res.data);
+            setError("");
 
-            setRes(response);
-            setData(response.data);
+            return res;
         } catch (e) {
             setError(e.message);
             setLoading(false);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const setFetch = async (callback, toRedux) => {
-        try {
-            setLoading(true);
-
-            const response = toRedux ? await dispatch(callback) : await callback;
-            console.log(response);
-            setRes(response);
-            setData(response.data);
-        } catch (e) {
-            console.log("popal", e.message);
-            setError(e.message);
-            setLoading(false);
+            setResponse({});
+            setData([]);
         } finally {
             setLoading(false);
         }
@@ -47,9 +33,8 @@ export const useFetch = () => {
         error,
         loading,
         data,
-        res,
+        response,
         setData,
         goFetch,
-        setFetch,
     };
 };

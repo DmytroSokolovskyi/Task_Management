@@ -14,9 +14,19 @@ export default function MyInput ({children, ...props}) {
         );
     }
 
+    if (props.type === "textarea") {
+        return (
+            <label className={cl.myInputLabel}>
+                <span className={cl.childrenSpan}>{children}</span>
+                <textarea {...props} className={cl.myInput}/>
+                <span className={cl.myInputSpan}>{props.error}</span>
+            </label>
+        );
+    }
+
     return (
         <label className={cl.myInputLabel}>
-            <span>{children}</span>
+            <span className={cl.childrenSpan}>{children}</span>
             <input {...props} className={cl.myInput}/>
             <span className={cl.myInputSpan}>{props.error}</span>
         </label>

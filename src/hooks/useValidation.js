@@ -1,4 +1,5 @@
 import {useEffect, useState} from "react";
+import dayjs from "dayjs";
 
 export const useValidation = (value, validations) => {
     const [isEmpty, setEmpty] = useState(false);
@@ -7,6 +8,7 @@ export const useValidation = (value, validations) => {
     const [isEmailError, setEmailError] = useState(false);
     const [isPassError, setPassError] = useState(false);
     const [isPasswordMatched, setPasswordMatched] = useState(false);
+    const [inFuture, setInFuture] = useState(false);
 
     const [errorMessage, setErrorMessage] = useState("");
 
@@ -44,7 +46,7 @@ export const useValidation = (value, validations) => {
                     setEmailError(false);
                 } else {
                     setEmailError(true);
-                    setErrorMessage("Invalid mail format");
+                    setErrorMessage("Invalid email format");
                 }
                 break;
             case "isPassword":
@@ -62,6 +64,18 @@ export const useValidation = (value, validations) => {
                 } else {
                     setPasswordMatched(true);
                     setErrorMessage("Password mismatch");
+                }
+                break;
+            case "inFuture":
+                if (value) {
+                    const dateTask = dayjs(value);
+                    const diffDate = dateTask.diff(dayjs(), "day");
+                    if (diffDate >= 0) {
+                        setInFuture(false);
+                    } else {
+                        setInFuture(true);
+                        setErrorMessage("You cannot set a date in the past");
+                    }
                 }
                 break;
 

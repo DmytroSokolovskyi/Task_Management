@@ -12,6 +12,11 @@ export const useInput = (initialValue, validations) => {
         setDirty(true);
     };
 
+    const toSetValue = (value) => {
+        setValue(value);
+        setDirty(true);
+    };
+
     const onBlur = () => {
         setDirty(true);
     };
@@ -29,5 +34,6 @@ export const useInput = (initialValue, validations) => {
         isDirty,
         ...valid,
         setValue,
+        toSetValue,
     };
 };

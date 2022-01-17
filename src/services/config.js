@@ -1,11 +1,11 @@
-import {destroyAuthToLocal, destroyTokens, getToken, saveTokens} from "./storage.service";
+import {destroyTokens, getToken, saveTokens} from "./storage.service";
 import axios from "axios";
 
 export const apiUrl = "http://localhost:5000";
 export const userUrl = "/user";
-// export const clientUrl = "/client";
-// export const visitUrl = "/visit";
-// export const authUrl = "/auth";
+export const authUrl = "/auth";
+export const activateUrl = "/auth/activate/";
+export const taskUrl = "/task";
 
 export const config = {
     baseURL: apiUrl,
@@ -16,41 +16,72 @@ export const config = {
 
 export const axiosInstance = axios.create(config);
 
-let _retry = false;
+// let _retry = false;
+//
+// axiosInstance.interceptors.response.use(
+//     (res) => res,
+//     async (error) => {
+//         const config = error.config;
+//
+//         if (config.url !== "/auth/login" && error.response) {
+//             if (error.response.status === 401 && config.url === "/auth/refresh") {
+//                 destroyAuthToLocal();
+//                 destroyTokens();
+//             }
+//
+//             if (error.response.status === 401 && !_retry) {
+//                 _retry = true;
+//                 try {
+//                     const res = await axiosInstance.get("/auth/refresh", {
+//                         headers: {
+//                             refresh_token: getToken("refresh_token"),
+//                         },
+//                     });
+//
+//                     const {access_token, refresh_token} = res.data;
+//                     saveTokens(access_token, refresh_token);
+//                     _retry = false;
+//
+//                     return axiosInstance(config);
+//                 } catch (_error) {
+//                     return Promise.reject(_error);
+//                 }
+//             }
+//         }
+//         return Promise.reject(error);
+//     },
+// );
 
-axiosInstance.interceptors.response.use(
-    (res) => res,
-    async (error) => {
-        const config = error.config;
+axiosInstance.interceptors.response.use((res) => {
+    return res;
+},
+async (error) => {
+    const originalRequest = error.config;
 
-        if (config.url !== "/auth/login" && error.response) {
-            if (error.response.status === 401 && config.url === "/auth/refresh") {
-                destroyAuthToLocal();
+    if (error.response.status === 401 && error.config && !error.config._isRetry) {
+        originalRequest._isRetry = true;
+        try {
+            if (error.response.status === 401 && error.config.url === "/auth/refresh") {
                 destroyTokens();
+                throw error;
             }
 
-            if (error.response.status === 401 && !_retry) {
-                _retry = true;
-                try {
-                    const res = await axiosInstance.get("/auth/refresh", {
-                        headers: {
-                            refresh_token: getToken("refresh_token"),
-                        },
-                    });
+            const response = await axiosInstance.get(authUrl + "/refresh", {
+                headers: {
+                    refresh_token: getToken("refresh_token"),
+                },
+            });
 
-                    const {access_token, refresh_token} = res.data;
-                    saveTokens(access_token, refresh_token);
-                    _retry = false;
+            const {access_token, refresh_token} = response.data;
+            saveTokens(access_token, refresh_token);
 
-                    return axiosInstance(config);
-                } catch (_error) {
-                    return Promise.reject(_error);
-                }
-            }
+            return axiosInstance(originalRequest);
+        } catch (e) {
+            console.log("Unauthorized");
         }
-        return Promise.reject(error);
-    },
-);
+    }
+    throw error;
+});
 
 axiosInstance.interceptors.request.use(config => {
     config.headers.Authorization = getToken("access_token") || "";
